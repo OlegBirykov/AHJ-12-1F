@@ -1,2 +1,4 @@
-// eslint-disable-next-line no-console
-console.log('it works!');
+import HasherWidget from './HasherWidget';
+
+const hasher = new HasherWidget(document.getElementById('container'));
+hasher.bindToDOM();

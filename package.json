@@ -39,6 +39,7 @@
   "dependencies": {
     "copy-webpack-plugin": "^6.1.0",
     "core-js": "3",
+    "crypto-js": "^4.0.0",
     "html-webpack-plugin": "^4.4.1",
     "mini-css-extract-plugin": "^0.11.1",
     "optimize-css-assets-webpack-plugin": "^5.0.4",
