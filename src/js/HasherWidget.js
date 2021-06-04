@@ -1,7 +1,10 @@
+import { algoritms } from './tools';
+
 export default class HasherWidget {
   constructor(parentEl) {
     this.parentEl = parentEl;
     this.classes = this.constructor.classes;
+    this.algoritmNumber = 0;
   }
 
   static get classes() {
@@ -9,16 +12,42 @@ export default class HasherWidget {
       widget: 'hasher-widget',
       form: 'form',
       title: 'title',
+      fileContainer: 'file-container',
+      fileLabel: 'file-label',
+      fileInput: 'file-input',
+      algoritmLabel: 'algoritm-label',
+      algoritmInput: 'algoritm-input',
+      algoritmList: 'algoritm-list',
+      hashTitle: 'hash-title',
+      hashValue: 'hash-value',
     };
   }
 
   static get markup() {
     return `
       <form class="${this.classes.form}">
-        <h1 class="${this.classes.form}">
+        <h1 class="${this.classes.title}">
           Hasher
         </h1>
+        <div class="${this.classes.fileContainer}">
+          <label class="${this.classes.fileLabel}">
+            Drop files here<BR>or<BR>Click to select
+          </label>
+          <input class="${this.classes.fileInput}" type="file" name="file" multiple>
+        </div>
+        <label class="${this.classes.algoritmLabel}">
+          Hash algoritm:
+          <input class="${this.classes.algoritmInput}" type="input" name="algoritm" value="${algoritms[0]}">
+          <ul class="${this.classes.algoritmList} hidden">
+          </ul>
+        </label>
       </form>
+      <p class="${this.classes.hashTitle}">
+        Calculated Hash:
+      </p>
+      <p class="${this.classes.hashValue}">
+        &nbsp;
+      </p>
     `;
   }
 
@@ -27,7 +56,22 @@ export default class HasherWidget {
     this.widget.className = this.classes.widget;
     this.widget.innerHTML = this.constructor.markup;
 
+    this.algoritmInput = this.widget.querySelector(`.${this.classes.algoritmInput}`);
+    this.algoritmList = this.widget.querySelector(`.${this.classes.algoritmList}`);
+
+    this.algoritmInput.addEventListener('click', () => this.redrawList());
+    this.algoritmList.addEventListener('click', () => this.hideList());
+
     this.parentEl.append(this.widget);
+  }
+
+  redrawList() {
+    this.algoritmList.innerHTML = algoritms.reduce((html, name) => `${html}<li>${name}</li>`, '');
+    this.algoritmList.classList.remove('hidden');
+  }
+
+  hideList() {
+    this.algoritmList.classList.add('hidden');
   }
 }
 /*
