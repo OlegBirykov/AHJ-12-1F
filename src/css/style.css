@@ -57,11 +57,27 @@ body {
   height: 1px;
 }
 
+.hasher-widget .algoritm-label {
+  position: relative;
+}
+
 .hasher-widget .algoritm-input {
   width: 8em;
   padding: 0.5em;
   border: 1px solid black;  
   border-radius: 1em;
+}
+
+.hasher-widget .algoritm-list {
+  position: absolute;
+  top: -1em;
+  right: -9.5em;
+  width: 8.5em;
+  padding: 0.5em;
+  border: 1px solid black;  
+  border-radius: 1em;
+  background-color: white;
+  list-style: none;
 }
 
 .hasher-widget .hash-title {
@@ -73,6 +89,15 @@ body {
   margin-top: 1em;
   text-align: center;
 }
+
+.hidden {
+  display: none;
+}
+
+.underlined {
+  text-decoration: underline;
+} 
+
 /*
 #container-1 {
   position: relative;

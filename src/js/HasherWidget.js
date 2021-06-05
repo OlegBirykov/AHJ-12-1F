@@ -5,6 +5,7 @@ export default class HasherWidget {
     this.parentEl = parentEl;
     this.classes = this.constructor.classes;
     this.algoritmNumber = 0;
+    this.file = null;
   }
 
   static get classes() {
@@ -29,18 +30,18 @@ export default class HasherWidget {
         <h1 class="${this.classes.title}">
           Hasher
         </h1>
-        <div class="${this.classes.fileContainer}">
+        <div class="${this.classes.fileContainer}" tabindex="0">
           <label class="${this.classes.fileLabel}">
             Drop files here<BR>or<BR>Click to select
           </label>
-          <input class="${this.classes.fileInput}" type="file" name="file" multiple>
+          <input class="${this.classes.fileInput}" type="file" name="file">
         </div>
         <label class="${this.classes.algoritmLabel}">
           Hash algoritm:
-          <input class="${this.classes.algoritmInput}" type="input" name="algoritm" value="${algoritms[0]}">
-          <ul class="${this.classes.algoritmList} hidden">
+          <ul class="${this.classes.algoritmList} hidden" tabindex="0">
           </ul>
         </label>
+        <input class="${this.classes.algoritmInput}" type="input" name="algoritm" value="${algoritms[0]}" readonly>
       </form>
       <p class="${this.classes.hashTitle}">
         Calculated Hash:
@@ -56,217 +57,101 @@ export default class HasherWidget {
     this.widget.className = this.classes.widget;
     this.widget.innerHTML = this.constructor.markup;
 
+    this.fileContainer = this.widget.querySelector(`.${this.classes.fileContainer}`);
+    this.fileInput = this.widget.querySelector(`.${this.classes.fileInput}`);
     this.algoritmInput = this.widget.querySelector(`.${this.classes.algoritmInput}`);
     this.algoritmList = this.widget.querySelector(`.${this.classes.algoritmList}`);
+    this.hashValue = this.widget.querySelector(`.${this.classes.hashValue}`);
 
-    this.algoritmInput.addEventListener('click', () => this.redrawList());
-    this.algoritmList.addEventListener('click', () => this.hideList());
+    this.fileContainer.addEventListener('dragover', (evt) => evt.preventDefault());
+
+    this.fileContainer.addEventListener('drop', (evt) => {
+      evt.preventDefault();
+      this.selectFile(evt.dataTransfer.files);
+    });
+
+    this.fileContainer.addEventListener('click', () => {
+      this.fileInput.dispatchEvent(new MouseEvent('click'));
+    });
+
+    this.fileContainer.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter') {
+        this.fileInput.dispatchEvent(new MouseEvent('click'));
+      }
+    });
+
+    this.fileInput.addEventListener('change', (evt) => this.selectFile(evt.target.files));
+
+    this.algoritmInput.addEventListener('click', () => {
+      this.algoritmList.classList.remove('hidden');
+      this.redrawList();
+    });
+
+    this.algoritmInput.addEventListener('keydown', (evt) => {
+      if (evt.key !== 'Enter') {
+        return;
+      }
+      evt.preventDefault();
+      this.algoritmList.classList.remove('hidden');
+      this.redrawList();
+    });
+
+    this.algoritmList.addEventListener('keydown', (evt) => {
+      switch (evt.key) {
+        case 'ArrowUp':
+          this.algoritmNumber--;
+          this.algoritmNumber += algoritms.length;
+          this.algoritmNumber %= algoritms.length;
+          this.redrawList();
+          break;
+        case 'ArrowDown':
+          this.algoritmNumber++;
+          this.algoritmNumber %= algoritms.length;
+          this.redrawList();
+          break;
+        case 'Enter':
+          this.selectAlgoritm();
+          break;
+        default:
+      }
+    });
 
     this.parentEl.append(this.widget);
   }
 
   redrawList() {
-    this.algoritmList.innerHTML = algoritms.reduce((html, name) => `${html}<li>${name}</li>`, '');
-    this.algoritmList.classList.remove('hidden');
-  }
+    this.algoritmList.innerHTML = '';
 
-  hideList() {
-    this.algoritmList.classList.add('hidden');
-  }
-}
-/*
-  bindToDOM() {
-    this.widget = document.createElement('div');
-    this.widget.className = `${this.classes.widget} hidden`;
-    this.widget.innerHTML = this.constructor.markup;
+    algoritms.forEach((name, index) => {
+      const item = document.createElement('li');
+      item.dataset.id = index;
+      item.innerHTML = index === this.algoritmNumber
+        ? `<span class="underlined">${name}</span><span>&nbsp;&#x2193</span>`
+        : name;
 
-    this.users = this.widget.querySelector(`.${this.classes.users}`);
-    this.messages = this.widget.querySelector(`.${this.classes.messages}`);
-    this.form = this.widget.querySelector(`.${this.classes.form}`);
-    this.input = this.widget.querySelector(`.${this.classes.newMessage}`);
-    this.error = this.widget.querySelector(`.${this.classes.error}`);
-
-    this.form.addEventListener('submit', (evt) => this.addMessage(evt));
-    this.input.addEventListener('change', () => {
-      this.input.value = this.input.value.trim();
-    });
-
-    this.parentEl.append(this.widget);
-
-    this.registrationForm = new RegistrationForm(
-      document.body,
-      this.ws,
-      (name) => this.registration(name),
-    );
-    this.registrationForm.bindToDOM();
-
-    this.connect();
-  }
-
-  connect() {
-    this.ws = new WebSocket(this.url);
-
-    this.ws.addEventListener('open', () => {
-      this.registrationForm.hideError();
-      this.hideError();
-      if (this.name) {
-        this.registration(this.name);
-      }
-
-      this.timeCount = this.timeout;
-      this.timer = setInterval(() => this.pingTimer(), 1000);
-    });
-
-    this.ws.addEventListener('message', (evt) => {
-      const data = JSON.parse(evt.data);
-      this.timeCount = this.timeout;
-
-      switch (data.event) {
-        case 'connect':
-          this.name = data.name;
-          this.showChat();
-          this.send({
-            event: 'request-messages',
-            time: this.lastMessageTime,
-          });
-          break;
-
-        case 'noconnect':
-          if (this.name) {
-            this.hideChat();
-          }
-          this.registrationForm.showError(`Пользователь ${data.name} уже есть в чате`);
-          this.name = null;
-          break;
-
-        case 'users':
-          this.userListUpdate(data.users);
-          break;
-
-        case 'new-message':
-          this.send({
-            event: 'request-messages',
-            time: this.lastMessageTime,
-          });
-          break;
-
-        case 'messages':
-          this.receivingМessages(data.messages);
-          break;
-
-        default:
-      }
-    });
-
-    this.ws.addEventListener('error', () => {
-      this.ws.close();
-    });
-
-    this.ws.addEventListener('close', () => {
-      this.registrationForm.showError('Нет связи с сервером');
-      this.showError();
-      clearInterval(this.timer);
-      setTimeout(() => this.connect(), 3000);
-    });
-  }
-
-  send(req) {
-    if (this.ws.readyState !== WebSocket.OPEN) {
-      return;
-    }
-    this.ws.send(JSON.stringify(req));
-  }
-
-  registration(name) {
-    this.send({
-      event: 'connect',
-      name,
-    });
-  }
-
-  showChat() {
-    this.registrationForm.hide();
-    this.widget.classList.remove('hidden');
-  }
-
-  hideChat() {
-    this.registrationForm.show();
-    this.widget.classList.add('hidden');
-  }
-
-  showError() {
-    this.error.classList.remove('hidden');
-  }
-
-  hideError() {
-    this.error.classList.add('hidden');
-  }
-
-  userListUpdate(users) {
-    let userList = '';
-
-    users.forEach((name) => {
-      userList += `
-        <div class="${this.classes.user}">
-          <img class="${this.classes.userAvatar}" src="img/avatar.png" width="50" alt="no avatar">
-          <p class="${this.classes.userName + (name === this.name ? ' red' : '')}">
-            ${name}
-          </p>
-        </div>
-      `;
-    });
-
-    this.users.innerHTML = userList;
-  }
-
-  addMessage(evt) {
-    evt.preventDefault();
-    this.send({
-      event: 'message',
-      text: this.input.value,
-    });
-    this.input.value = '';
-  }
-
-  receivingМessages(messages) {
-    messages.forEach(({ name, time, text }) => {
-      const message = document.createElement('div');
-      message.className = this.classes.message;
-      message.innerHTML = `
-        <p class="${this.classes.messageTitle + (name === this.name ? ' right red' : '')}">
-          ${name}, ${outputTime(time)}
-        </p>
-        <p class="${this.classes.messageText + (name === this.name ? ' right' : '')}">
-        </p>
-      `;
-
-      const messageText = message.querySelector(`.${this.classes.messageText}`);
-      messageText.innerText = text;
-
-      const autoscroll = this.messages.scrollHeight
-        === this.messages.scrollTop + this.messages.clientHeight;
-
-      this.messages.append(message);
-      if (autoscroll) {
-        this.messages.scrollTop = this.messages.scrollHeight - this.messages.clientHeight;
-      }
-
-      this.lastMessageTime = time;
-    });
-  }
-
-  pingTimer() {
-    this.timeCount--;
-    if (!this.timeCount) {
-      this.ws.close();
-      return;
-    }
-
-    if (this.timeCount === Math.trunc(this.timeout / 2)) {
-      this.send({
-        event: 'ping',
+      item.addEventListener('click', () => {
+        this.algoritmNumber = +item.dataset.id;
+        this.selectAlgoritm();
       });
+
+      this.algoritmList.append(item);
+      this.algoritmList.focus();
+    });
+  }
+
+  selectAlgoritm() {
+    this.algoritmInput.value = algoritms[this.algoritmNumber];
+    this.algoritmList.classList.add('hidden');
+    if (!this.file) {
+      return;
     }
+
+    this.hashValue.innerText = 'Идёт обработка данных...';
+  }
+
+  selectFile(files) {
+    const file = Array.from(files)[0];
+    this.file = file;
+    this.selectAlgoritm();
   }
 }
-*/
