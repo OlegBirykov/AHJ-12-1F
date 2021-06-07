@@ -1,3 +1,4 @@
+import Worker from './hash.worker';
 import { algoritms } from './tools';
 
 export default class HasherWidget {
@@ -116,7 +117,14 @@ export default class HasherWidget {
       }
     });
 
+    this.createWorker();
+
     this.parentEl.append(this.widget);
+  }
+
+  createWorker() {
+    const worker = new Worker();
+    worker.postMessage('qqqqq');
   }
 
   redrawList() {
