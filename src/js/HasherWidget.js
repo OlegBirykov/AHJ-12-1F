@@ -124,8 +124,13 @@ export default class HasherWidget {
 
   createWorker() {
     this.worker = new Worker();
+
     this.worker.addEventListener('message', (evt) => {
       this.hashValue.innerText = evt.data;
+    });
+
+    this.worker.addEventListener('error', (evt) => {
+      this.hashValue.innerText = `Error: ${evt.message}`;
     });
   }
 
