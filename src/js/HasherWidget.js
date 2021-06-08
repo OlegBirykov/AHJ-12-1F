@@ -124,8 +124,9 @@ export default class HasherWidget {
 
   createWorker() {
     this.worker = new Worker();
-    //  console.log(this.worker);
-    this.worker.postMessage('qqqqq');
+    this.worker.addEventListener('message', (evt) => {
+      this.hashValue.innerText = evt.data;
+    });
   }
 
   redrawList() {
@@ -156,6 +157,7 @@ export default class HasherWidget {
     }
 
     this.hashValue.innerText = 'Идёт обработка данных...';
+    this.worker.postMessage({ file: this.file, algoritm: this.algoritmNumber });
   }
 
   selectFile(files) {

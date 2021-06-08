@@ -1,3 +1,5 @@
+import crypto from 'crypto-js';
+
 export const algoritms = [
   'MD5',
   'SHA1',
@@ -6,5 +8,6 @@ export const algoritms = [
 ];
 
 export function getHash(data, algoritm) {
-  return { data, algoritm };
+  const wordArray = crypto.lib.WordArray.create(data);
+  return crypto[algoritms[algoritm]](wordArray).toString(crypto.enc.Hex);
 }
