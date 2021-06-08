@@ -123,8 +123,9 @@ export default class HasherWidget {
   }
 
   createWorker() {
-    const worker = new Worker();
-    worker.postMessage('qqqqq');
+    this.worker = new Worker();
+    //  console.log(this.worker);
+    this.worker.postMessage('qqqqq');
   }
 
   redrawList() {
